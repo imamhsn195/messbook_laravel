@@ -21,7 +21,6 @@ class MessGroupSeeder extends Seeder
             'fixed_cost' => 70,
             'start_date' => '2025-02-01',
             'end_date' => '2025-02-28',
-            'total_days' => 28,
             'created_at' => '2025-02-05 20:50:16',
             'updated_at' => '2025-02-05 20:50:16',
         ]);

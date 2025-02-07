@@ -24,8 +24,7 @@ class MessGroupFactory extends Factory
             'name' => $this->faker->unique()->word(),
             'fixed_cost' => 70,
             'start_date' => $startDate,
-            'end_date' => $endDate,
-            'total_days' => $totalDays
+            'end_date' => $endDate
         ];
     }
 }

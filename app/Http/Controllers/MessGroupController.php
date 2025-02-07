@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\MessGroupUpdated;
 use App\Models\MessGroup;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -38,19 +39,10 @@ class MessGroupController extends Controller
                 'fixed_cost' => 'required|numeric|min:0',
             ]);
 
-            // Calculate total_days if end_date is provided
-            if ($request->has('start_date') && $request->has('end_date')) {
-                $startDate = \Carbon\Carbon::parse($validated['start_date']);
-                $endDate = \Carbon\Carbon::parse($validated['end_date']);
-                $validated['total_days'] = (int) $startDate->diffInDays($endDate) + 1;
-            }
-
             // If no end_date is provided, set it to the last day of the start_date's month
-            if (empty($validated['total_days'])) {
+            if (!$request->has('end_date')) {
                 $startDate = \Carbon\Carbon::parse($validated['start_date']);
-                $endDate = (clone $startDate)->endOfMonth();
-                $validated['end_date'] = $endDate->toDateString();
-                $validated['total_days'] = (int) $startDate->diffInDays($endDate) + 1;
+                $validated['end_date'] = $startDate->endOfMonth()->toDateString();
             }
 
             // Create the MessGroup
@@ -95,22 +87,11 @@ class MessGroupController extends Controller
             ]);
 
             if ($request->has('start_date')) {
-                $startDate = \Carbon\Carbon::parse($validated['start_date']);
-                $messGroup->start_date = $startDate->toDateString();
-            } else {
-                $startDate = \Carbon\Carbon::parse($messGroup->start_date);
+                $messGroup->start_date = \Carbon\Carbon::parse($validated['start_date'])->toDateString();
             }
 
             if ($request->has('end_date')) {
-                $endDate = \Carbon\Carbon::parse($validated['end_date']);
-                $messGroup->end_date = $endDate->toDateString();
-            } else {
-                $endDate = \Carbon\Carbon::parse($messGroup->end_date);
-            }
-
-            // Calculate `total_days` only if both `start_date` and `end_date` exist
-            if ($messGroup->start_date && $messGroup->end_date) {
-                $messGroup->total_days = $startDate->diffInDays($endDate) + 1; // Including the start date
+                $messGroup->end_date = \Carbon\Carbon::parse($validated['end_date'])->toDateString();
             }
 
             if ($request->has('name')) {
@@ -122,6 +103,9 @@ class MessGroupController extends Controller
             }
 
             $messGroup->save();
+
+            // Dispatch event to recalculate balances
+            event(new MessGroupUpdated($messGroup));
 
             return response()->json(['message' => 'Mess group updated', 'data' => $messGroup], Response::HTTP_OK);
         } catch (ValidationException $e) {
@@ -169,6 +153,9 @@ class MessGroupController extends Controller
             $messGroup = MessGroup::findOrFail($id);
             $messGroup->members()->attach($request->member_id);
 
+            // Dispatch event to recalculate balances
+            event(new MessGroupUpdated($messGroup, 'member added'));
+
             return response()->json(['message' => 'Member added successfully'], Response::HTTP_OK);
         } catch (ModelNotFoundException $e) {
             return response()->json(['message' => 'Mess group not found.'], Response::HTTP_NOT_FOUND);
@@ -179,7 +166,7 @@ class MessGroupController extends Controller
         }
     }
 
-    public function removeMember(Request $request, $messGroupId, $memberId)
+    public function removeMember(Request $request, $messGroupId, $memberId): JsonResponse
     {
         $messGroup = MessGroup::findOrFail($messGroupId);
 
@@ -187,7 +174,7 @@ class MessGroupController extends Controller
         $messGroup->members()->detach($memberId);
 
         // Dispatch event to recalculate balances
-        event(new MessGroupUpdated($messGroupId, 'member removed'));
+        event(new MessGroupUpdated($messGroup, 'member removed'));
 
         return response()->json(['message' => 'Member removed successfully']);
     }
@@ -200,13 +187,12 @@ class MessGroupController extends Controller
             $messGroup = MessGroup::findOrFail($id);
             $members = $messGroup->members;
             $memberCount = $members->count();
-            $totalDays = $messGroup->total_days;
-            $fixedCost = $messGroup->fixed_cost; // Per-member cooking cost
+            $fixedCost = $messGroup->fixed_cost;
 
             // Validate input
-            if ($totalDays === 0 || $memberCount === 0) {
+            if ($memberCount === 0) {
                 return response()->json(
-                    ['message' => 'Invalid data: total days or member count is zero.'],
+                    ['message' => 'Invalid data: member count is zero.'],
                     Response::HTTP_BAD_REQUEST
                 );
             }

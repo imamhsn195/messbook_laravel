@@ -17,7 +17,6 @@ return new class extends Migration
             $table->date('start_date');
             $table->date('end_date')->nullable();
             $table->decimal('fixed_cost');
-            $table->integer('total_days');
             $table->timestamps();
         });
     }

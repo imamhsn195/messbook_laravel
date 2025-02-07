@@ -117,7 +117,6 @@ class MessGroupTest extends TestCase
         // Create MessGroup with new parameters
         $messGroup = MessGroup::factory()->create([
             'fixed_cost' => 70.00, // Updated fixed cost
-            'total_days' => 28     // Updated total days
         ]);
 
         // Create all 7 members

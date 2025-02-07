@@ -30,7 +30,7 @@ class ExpenseControllerTest extends TestCase
                     '*' => [
                         'id', 'mess_group_id', 'member_id', 'date', 'description', 'amount',
                         'created_at', 'updated_at',
-                        'mess_group' => ['id', 'name', 'start_date', 'end_date', 'total_days'],
+                        'mess_group' => ['id', 'name', 'start_date', 'end_date'],
                         'member' => ['id', 'name']
                     ]
                 ]
@@ -91,7 +91,7 @@ class ExpenseControllerTest extends TestCase
                 'data' => [
                     'id', 'mess_group_id', 'member_id', 'date', 'description', 'amount',
                     'created_at', 'updated_at',
-                    'mess_group' => ['id', 'name', 'start_date', 'end_date', 'total_days'],
+                    'mess_group' => ['id', 'name', 'start_date', 'end_date'],
                     'member' => ['id', 'name']
                 ]
             ]);

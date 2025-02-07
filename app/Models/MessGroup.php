@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class MessGroup extends Model
 {
     use HasFactory;
-    protected $fillable = ['name','fixed_cost', 'start_date', 'end_date', 'total_days'];
+    protected $fillable = ['name','fixed_cost', 'start_date', 'end_date'];
     public function members()
     {
         return $this->belongsToMany(Member::class, 'member_mess_group', 'mess_group_id', 'member_id')
